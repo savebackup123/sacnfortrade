@@ -12,7 +12,7 @@ from io import StringIO
 from datetime import datetime
 import pandas as pd
 import requests
-import pandas_ta as ta
+import pandas_ta_classic as ta
 import yfinance as yf
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
