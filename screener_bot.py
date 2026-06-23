@@ -92,26 +92,40 @@ def main():
         "Accept-Language": "th-TH,th;q=0.9,en;q=0.8",
     }
     
+    tickers = []
     try:
-        r = requests.get(LIST_URL, headers=headers, timeout=60)
+        print("Attempting to download live tickers from SET website...")
+        r = requests.get(LIST_URL, headers=headers, timeout=30)
         r.raise_for_status()
         df0 = pd.read_html(StringIO(r.text))[0]
+        listed = df0.copy()
+        listed.columns = listed.iloc[1]
+        listed = listed.iloc[2:].reset_index(drop=True)
+        listed = listed[["หลักทรัพย์", "ตลาด"]].copy()
+        listed["หลักทรัพย์"] = listed["หลักทรัพย์"].astype(str).str.strip()
+        listed["ตลาด"] = listed["ตลาด"].astype(str).str.strip()
+        df_set = listed[listed["ตลาด"].str.upper().eq("SET")].copy()
+        tickers = df_set["หลักทรัพย์"].dropna().astype(str).str.strip().unique().tolist()
+        print(f"Successfully downloaded {len(tickers)} live tickers.")
     except Exception as e:
-        print(f"❌ Error fetching tickers from SET: {e}")
-        send_telegram_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, f"❌ <b>80/20 SET Screener Error:</b> ไม่สามารถดึงรายชื่อหุ้นจากตลาดหลักทรัพย์ฯ ได้\n{e}")
+        print(f"⚠️ Warning: Failed to fetch tickers from SET website: {e}")
+        if os.path.exists("set_tickers.json"):
+            print("Using local backup set_tickers.json...")
+            import json
+            try:
+                with open("set_tickers.json", "r", encoding="utf-8") as f:
+                    tickers = json.load(f)
+                print(f"Loaded {len(tickers)} tickers from set_tickers.json backup.")
+            except Exception as json_err:
+                print(f"❌ Error reading set_tickers.json: {json_err}")
+        
+    if not tickers:
+        print("❌ Error: No tickers available to scan.")
+        send_telegram_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "❌ <b>80/20 SET Screener Error:</b> ไม่สามารถโหลดรายชื่อหุ้นจากเว็บไซต์ SET หรือไฟล์ Backup ได้")
         sys.exit(1)
 
-    listed = df0.copy()
-    listed.columns = listed.iloc[1]
-    listed = listed.iloc[2:].reset_index(drop=True)
-    listed = listed[["หลักทรัพย์", "ตลาด"]].copy()
-    listed["หลักทรัพย์"] = listed["หลักทรัพย์"].astype(str).str.strip()
-    listed["ตลาด"] = listed["ตลาด"].astype(str).str.strip()
-
-    df_set = listed[listed["ตลาด"].str.upper().eq("SET")].copy()
-    tickers_bk = [t if t.endswith(".BK") else f"{t}.BK" for t in df_set["หลักทรัพย์"].dropna().astype(str).str.strip().unique().tolist()]
-    
-    print(f"Total SET tickers found: {len(tickers_bk)}")
+    tickers_bk = [t if t.endswith(".BK") else f"{t}.BK" for t in tickers]
+    print(f"Total SET tickers to scan: {len(tickers_bk)}")
 
     # =========================
     # 2) RSI SCAN (ANY RSI>80 in last 75 trading days)
