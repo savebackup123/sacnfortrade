@@ -1,0 +1,7 @@
+yfinance
+pandas
+pandas-ta
+openpyxl
+lxml
+html5lib
+requests
