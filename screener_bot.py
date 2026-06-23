@@ -396,7 +396,7 @@ def main():
             close = row["Close_last"]
             dy = row["DividendYield_%"]
             pe = row["TrailingPE"]
-            tg_text += f"• <b>{ticker}</b>: ราคา <code>{close:.2f}</code> | ปันผล <code>{dy:.2f}%</code> | P/E <code>{pe:.2f}</code>\n"
+            tg_text += f"• <b>{ticker}</b>\n  ราคา: <code>{close:.2f}</code> | ปันผล: <code>{dy:.2f}%</code> | P/E: <code>{pe:.2f}</code>\n\n"
         
         tg_text += "\n<i>*กรุณาตรวจสอบหน้ากราฟราคาเพื่อหาจังหวะซื้อตามรูปแบบ 80/20 อีกครั้ง</i>"
     else:
