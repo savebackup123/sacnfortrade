@@ -26,6 +26,21 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Diagnostic Secrets Check
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        python -c "
+        import os
+        token = os.getenv('TELEGRAM_BOT_TOKEN')
+        chat_id = os.getenv('TELEGRAM_CHAT_ID')
+        print(f'TELEGRAM_BOT_TOKEN present: {bool(token)}')
+        print(f'TELEGRAM_BOT_TOKEN length: {len(token) if token else 0}')
+        print(f'TELEGRAM_CHAT_ID present: {bool(chat_id)}')
+        print(f'TELEGRAM_CHAT_ID value: {repr(chat_id)}')
+        "
+
     - name: Run Screener Bot
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
