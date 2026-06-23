@@ -391,4 +391,13 @@ def main():
     print("=== Finished ===")
 
 if __name__ == "__main__":
-    main()
+    import traceback
+    try:
+        main()
+    except Exception as e:
+        tb_str = traceback.format_exc()
+        print(f"❌ Error occurred: {tb_str}")
+        # Send error to Telegram to help user debug
+        error_msg = f"❌ <b>80/20 SET Screener Run Error:</b>\n<pre>{tb_str[:3500]}</pre>"
+        send_telegram_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, error_msg)
+        sys.exit(1)
