@@ -30,10 +30,19 @@ if os.path.exists(".env"):
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
+def format_chat_id(chat_id):
+    chat_id = str(chat_id).strip()
+    if chat_id.startswith("-") and not chat_id.startswith("-100"):
+        digits_part = chat_id[1:]
+        if digits_part.isdigit() and len(digits_part) >= 9:
+            return f"-100{digits_part}"
+    return chat_id
+
 def send_telegram_message(token, chat_id, text):
     if not token or not chat_id:
         print("Telegram configuration missing. Skip sending message.")
         return None
+    chat_id = format_chat_id(chat_id)
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -52,6 +61,7 @@ def send_telegram_file(token, chat_id, filepath, caption):
     if not token or not chat_id:
         print("Telegram configuration missing. Skip sending file.")
         return None
+    chat_id = format_chat_id(chat_id)
     url = f"https://api.telegram.org/bot{token}/sendDocument"
     try:
         with open(filepath, "rb") as file:
@@ -356,8 +366,12 @@ def main():
 
     tg_text += "\n\n📂 รายละเอียดเพิ่มเติมอยู่ในไฟล์ Excel แนบท้ายนี้"
 
-    send_telegram_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, tg_text)
-    send_telegram_file(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, out_xlsx, f"📊 ไฟล์ผลการสแกนหุ้นประจำวันที่ {today_str}")
+    # Split chat IDs and send to each
+    chat_ids = [c.strip() for c in TELEGRAM_CHAT_ID.split(",") if c.strip()] if TELEGRAM_CHAT_ID else []
+    for cid in chat_ids:
+        print(f"Sending notifications to Chat ID: {cid}")
+        send_telegram_message(TELEGRAM_BOT_TOKEN, cid, tg_text)
+        send_telegram_file(TELEGRAM_BOT_TOKEN, cid, out_xlsx, f"📊 ไฟล์ผลการสแกนหุ้นประจำวันที่ {today_str}")
     
     print("Telegram notifications sent successfully!")
     print("=== Finished ===")
