@@ -30,19 +30,11 @@ if os.path.exists(".env"):
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-def format_chat_id(chat_id):
-    chat_id = str(chat_id).strip()
-    if chat_id.startswith("-") and not chat_id.startswith("-100"):
-        digits_part = chat_id[1:]
-        if digits_part.isdigit() and len(digits_part) >= 9:
-            return f"-100{digits_part}"
-    return chat_id
-
 def send_telegram_message(token, chat_id, text):
     if not token or not chat_id:
         print("Telegram configuration missing. Skip sending message.")
         return None
-    chat_id = format_chat_id(chat_id)
+    
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -50,10 +42,25 @@ def send_telegram_message(token, chat_id, text):
         "parse_mode": "HTML"
     }
     try:
+        # Try sending to the original ID (e.g. regular group -5417478949)
         response = requests.post(url, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()
     except Exception as e:
+        # Fallback: if it starts with "-" but not "-100", try prepending "-100" (supergroup/channel)
+        chat_id_str = str(chat_id).strip()
+        if chat_id_str.startswith("-") and not chat_id_str.startswith("-100"):
+            digits_part = chat_id_str[1:]
+            if digits_part.isdigit() and len(digits_part) >= 9:
+                fallback_id = f"-100{digits_part}"
+                print(f"Failed to send message to {chat_id}. Retrying with fallback: {fallback_id}...")
+                payload["chat_id"] = fallback_id
+                try:
+                    response = requests.post(url, json=payload, timeout=30)
+                    response.raise_for_status()
+                    return response.json()
+                except Exception as fallback_err:
+                    print(f"Fallback send message failed: {fallback_err}")
         print(f"Error sending telegram message: {e}")
         return None
 
@@ -61,9 +68,10 @@ def send_telegram_file(token, chat_id, filepath, caption):
     if not token or not chat_id:
         print("Telegram configuration missing. Skip sending file.")
         return None
-    chat_id = format_chat_id(chat_id)
+        
     url = f"https://api.telegram.org/bot{token}/sendDocument"
     try:
+        # Try sending to the original ID
         with open(filepath, "rb") as file:
             files = {"document": file}
             data = {"chat_id": chat_id, "caption": caption}
@@ -71,6 +79,22 @@ def send_telegram_file(token, chat_id, filepath, caption):
             response.raise_for_status()
             return response.json()
     except Exception as e:
+        # Fallback: if it starts with "-" but not "-100", try prepending "-100"
+        chat_id_str = str(chat_id).strip()
+        if chat_id_str.startswith("-") and not chat_id_str.startswith("-100"):
+            digits_part = chat_id_str[1:]
+            if digits_part.isdigit() and len(digits_part) >= 9:
+                fallback_id = f"-100{digits_part}"
+                print(f"Failed to send file to {chat_id}. Retrying with fallback: {fallback_id}...")
+                try:
+                    with open(filepath, "rb") as file:
+                        files = {"document": file}
+                        data = {"chat_id": fallback_id, "caption": caption}
+                        response = requests.post(url, data=data, files=files, timeout=60)
+                        response.raise_for_status()
+                        return response.json()
+                except Exception as fallback_err:
+                    print(f"Fallback send file failed: {fallback_err}")
         print(f"Error sending telegram file: {e}")
         return None
 
