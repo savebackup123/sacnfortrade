@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Credentials & Config
+.env
+
+# Excel Output files (we only want code in the repo, not the run output)
+*.xlsx
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# System / IDE files
+.vscode/
+.idea/
+.agents/
+.gemini/
