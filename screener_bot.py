@@ -398,8 +398,7 @@ def main():
             pe = row["TrailingPE"]
             tg_text += f"• <b>{ticker}</b>\n"
             tg_text += f"  ราคา: <code>{close:.2f}</code>\n"
-            tg_text += f"  ปันผล: <code>{dy:.2f}%</code>\n"
-            tg_text += f"  P/E: <code>{pe:.2f}</code>\n\n"
+            tg_text += f"  ปันผล:\xa0<code>{dy:.2f}%</code>\xa0|\xa0P/E:\xa0<code>{pe:.2f}</code>\n\n"
         
         tg_text += "\n<i>*กรุณาตรวจสอบหน้ากราฟราคาเพื่อหาจังหวะซื้อตามรูปแบบ 80/20 อีกครั้ง</i>"
     else:
