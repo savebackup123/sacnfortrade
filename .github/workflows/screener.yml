@@ -10,6 +10,9 @@ jobs:
   run-screener:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -46,3 +49,12 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: python screener_bot.py
+
+    - name: Keepalive Activity Heartbeat
+      continue-on-error: true
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        date -u "+%Y-%m-%d %H:%M:%S UTC" > last_run.txt
+        git add last_run.txt
+        git diff --staged --quiet || (git commit -m "Auto-update scan heartbeat [skip ci]" && git push)
